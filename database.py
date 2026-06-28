@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 DB_PATH = Path("database/study_assistant.sqlite3")
+PRIVACY_SCHEMA_VERSION = 2
 
 
 def connect() -> sqlite3.Connection:
