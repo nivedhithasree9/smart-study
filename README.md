@@ -5,65 +5,150 @@ CPU-first, offline-first study material structuring for students who need useful
 ## Hackathon Submission
 
 - Event: The CPU-First Hackathon
-- Phase: Phase 1, Plan & Spec
-- Submission target: before 10:00 AM on June 28, 2026
-- App type: Web app with Streamlit
+- Phase 2 target: working MVP before lunch on June 28, 2026
+- App type: Streamlit web app
 - License: AGPL-3.0-or-later, strong copyleft
-- Runtime: Python 3.11+, llama.cpp CPU inference with local GGUF model
-- Core guarantee: no cloud APIs, no internet-dependent AI services, no GPU/CUDA requirement
+- Runtime declaration: Python 3.11+, SQLite, Tesseract OCR, PyMuPDF, optional llama.cpp CPU inference with a local GGUF model
+- Offline guarantee: no cloud APIs, no internet-dependent AI services, no GPU/CUDA requirement
 
-## Problem
+## What It Does
 
-Students often have useful study material scattered across PDFs, plain text notes, screenshots, and handwritten images. Turning that material into summaries, flashcards, keywords, MCQs, and revision plans usually requires online AI tools. That fails in classrooms, hostels, rural areas, labs, or exam environments where connectivity is limited or private study data should stay local.
+Offline Smart Study Assistant accepts PDF, TXT, PNG, and JPG study material, extracts text locally, cleans it, turns it into structured study resources, saves everything in SQLite, and lets students search older uploads offline.
 
-Offline Smart Study Assistant turns unstructured notes into structured study resources entirely on CPU.
+Generated study resources include:
 
-## Proposed Solution
+- short, medium, and detailed summaries
+- key points and keywords
+- question-answer flashcards
+- at least 10 MCQs with four options and one correct answer
+- short-answer exam questions
+- difficulty level and estimated study time
+- quiz score tracking and bookmarks
 
-The app accepts PDF, TXT, PNG, and JPG uploads, extracts text locally, cleans it, generates study content with a local small language model, stores outputs in SQLite, and lets students search previous uploads offline.
+If a local GGUF model is configured, the app uses `llama-cpp-python` with `n_gpu_layers=0`. If no model is available, the app uses deterministic local extractive generators so the MVP still works fully offline for demo and testing.
 
-If a local GGUF model is available, the app uses llama.cpp through `llama-cpp-python`. If the model is missing during development, deterministic local extractive generators keep the interface testable without making any network call.
+## Project Structure
 
-## Model And Runtime Declaration
+```text
+offline-smart-study-assistant/
+|-- app.py
+|-- database.py
+|-- models/
+|-- services/
+|   |-- pdf_reader.py
+|   |-- ocr.py
+|   |-- llm.py
+|   |-- summarizer.py
+|   |-- flashcards.py
+|   |-- mcq_generator.py
+|   |-- keyword_extractor.py
+|   |-- cache.py
+|   |-- export.py
+|   `-- text_processing.py
+|-- data/
+|-- uploads/
+|-- database/
+|-- sample_data/
+|-- specs/
+|-- docs/
+|-- requirements.txt
+|-- requirements-llm.txt
+|-- LICENSE
+`-- README.md
+```
 
-- Primary model: TinyLlama 1.1B Chat GGUF or Phi-3 Mini GGUF
-- Runtime: llama.cpp via `llama-cpp-python`
-- Device target: CPU only
-- OCR: Tesseract OCR through `pytesseract`
-- PDF extraction: PyMuPDF
-- Database: SQLite
-- Frontend: Streamlit
+## Quick Start
 
-## Core Features
+### Windows
 
-- Upload study notes as PDF, TXT, PNG, or JPG
-- Extract text from PDFs and images
-- Clean and normalize extracted text
-- Generate short, medium, and detailed summaries
-- Extract key points and keywords
-- Generate flashcards
-- Generate at least 10 MCQs with four options and a correct answer
-- Generate short-answer exam questions
-- Classify difficulty as Easy, Medium, or Hard
-- Estimate reading/study time
-- Store documents and generated content in SQLite
-- Cache repeated uploads by content hash
-- Search previous notes offline
-- Bookmark important notes
-- Export summaries to PDF and flashcards to CSV
+```powershell
+python -m venv .venv
+.\.venv\Scripts\activate
+pip install -r requirements.txt
+streamlit run app.py
+```
 
-## Offline Demo Plan
+### Linux and macOS
 
-1. Install dependencies and place a GGUF model in `models/`.
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+streamlit run app.py
+```
+
+Open the local Streamlit URL, usually `http://localhost:8501`.
+
+## Optional Local LLM Setup
+
+The MVP works without a model, but the intended CPU SLM path is:
+
+1. Install the llama.cpp Python binding:
+
+```bash
+pip install -r requirements-llm.txt
+```
+
+2. Put a quantized GGUF model in `models/`, for example:
+
+```text
+models/tinyllama.gguf
+```
+
+3. Open **Settings** in the app and set the GGUF path. The app forces CPU mode by using `n_gpu_layers=0`.
+
+Suggested models:
+
+- TinyLlama 1.1B Chat GGUF
+- Phi-3 Mini GGUF if the laptop has enough RAM
+
+Do not commit large model files to Git.
+
+## OCR Setup
+
+Image input uses Tesseract locally through `pytesseract`.
+
+Windows:
+
+- Install Tesseract OCR.
+- If it is not in `PATH`, set the executable path in **Settings**, for example `C:\Program Files\Tesseract-OCR\tesseract.exe`.
+
+Linux:
+
+```bash
+sudo apt install tesseract-ocr
+```
+
+macOS:
+
+```bash
+brew install tesseract
+```
+
+PDF and TXT uploads do not require Tesseract.
+
+## Offline Demo Script
+
+1. Install dependencies while internet is available.
 2. Turn Wi-Fi off.
 3. Run `streamlit run app.py`.
-4. Upload `sample_data/os_deadlock_notes.txt`.
-5. Show generated summaries, flashcards, MCQs, keywords, and stored history.
-6. Search for `deadlock` in previous uploads.
+4. Go to **Upload Notes**.
+5. Upload `sample_data/os_deadlock_notes.txt`.
+6. Show the generated summary, flashcards, MCQs, dashboard history, and search.
+7. Search for `deadlock` in **Search Notes**.
+8. Re-upload the same file to show cached results.
 
-## Repository Plan
+## SQLite Storage
 
-Phase 1 planning artifacts are in:
+The app creates `database/study_assistant.sqlite3` automatically with:
+
+- `Documents`
+- `StudyContent`
+- `StudyProgress`
+
+Uploads are stored in `uploads/`. Generated content is cached by SHA-256 hash of cleaned text.
+
+## Planning Artifacts
 
 - [Spec](specs/001-offline-smart-study-assistant/spec.md)
 - [Implementation Plan](specs/001-offline-smart-study-assistant/plan.md)
@@ -73,54 +158,6 @@ Phase 1 planning artifacts are in:
 - [Issue Plan](docs/issues.md)
 - [Work Division](docs/work-division.md)
 
-## MVP Architecture
+## License
 
-```text
-Streamlit UI
-  -> upload service
-  -> PDF/TXT/OCR extractors
-  -> text cleaning
-  -> local LLM service, llama.cpp CPU
-  -> structured JSON validation
-  -> SQLite persistence
-  -> dashboard, search, quiz, export
-```
-
-## Expected Project Structure
-
-```text
-offline-smart-study-assistant/
-├── app.py
-├── database.py
-├── models/
-├── services/
-├── data/
-├── uploads/
-├── database/
-├── sample_data/
-├── specs/
-├── docs/
-├── requirements.txt
-├── LICENSE
-└── README.md
-```
-
-## Setup Preview
-
-```bash
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-streamlit run app.py
-```
-
-On Linux/macOS:
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-streamlit run app.py
-```
-
-Full setup and audit instructions will be completed during Phase 2 and Phase 3.
+AGPL-3.0-or-later. See [LICENSE](LICENSE).
