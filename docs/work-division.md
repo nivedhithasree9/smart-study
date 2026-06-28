@@ -7,7 +7,7 @@
 | Product + Demo Lead | Nivedhitha | Problem framing, README, demo script, judge-facing explanation. |
 | Backend Lead | Backend | SQLite schema, ingestion, caching, search, exports. |
 | AI Runtime Lead | AI | llama.cpp setup, GGUF model path, prompt/schema contract, CPU performance. |
-| Frontend Lead | Frontend | Streamlit navigation, dashboard, upload flow, quiz mode, settings. |
+| Frontend Lead | Frontend | Streamlit navigation, dashboard, upload flow, quiz mode, progress, and search. |
 | DevOps/Audit Lead | DevOps | License, contributing docs, changelog, pre-commit, GitLab CI, local runner checks. |
 
 ## Phase 1, Before 10:00 AM
@@ -21,7 +21,7 @@
 
 - Backend Lead completes TXT/PDF/image ingestion and SQLite writes.
 - AI Runtime Lead connects local GGUF inference and deterministic fallback for development.
-- Frontend Lead completes Streamlit upload, dashboard, summaries, flashcards, MCQs, search, and settings.
+- Frontend Lead completes Streamlit upload, dashboard, summaries, flashcards, MCQs, progress, and search.
 - Product + Demo Lead records offline demo steps using sample notes.
 
 ## Phase 3, Before 3:00 PM

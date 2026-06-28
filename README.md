@@ -24,6 +24,7 @@ Generated study resources include:
 - short-answer exam questions
 - difficulty level and estimated study time
 - quiz score tracking and bookmarks
+- progress dashboard for quiz attempts and scores
 
 If a local GGUF model is configured, the app uses `llama-cpp-python` with `n_gpu_layers=0`. If no model is available, the app uses deterministic local extractive generators so the MVP still works fully offline for demo and testing.
 
@@ -95,7 +96,7 @@ pip install -r requirements-llm.txt
 models/tinyllama.gguf
 ```
 
-3. Open **Settings** in the app and set the GGUF path. The app forces CPU mode by using `n_gpu_layers=0`.
+3. Put the model at `models/tinyllama.gguf`, or update `model_path` in `app.py` before starting the app. The app forces CPU mode by using `n_gpu_layers=0`.
 
 Suggested models:
 
@@ -111,7 +112,7 @@ Image input uses Tesseract locally through `pytesseract`.
 Windows:
 
 - Install Tesseract OCR.
-- If it is not in `PATH`, set the executable path in **Settings**, for example `C:\Program Files\Tesseract-OCR\tesseract.exe`.
+- If it is not in `PATH`, update the local `tesseract_cmd` runtime value before processing images.
 
 Linux:
 
@@ -134,7 +135,7 @@ PDF and TXT uploads do not require Tesseract.
 3. Run `streamlit run app.py`.
 4. Go to **Upload Notes**.
 5. Upload `sample_data/os_deadlock_notes.txt`.
-6. Show the generated summary, flashcards, MCQs, dashboard history, and search.
+6. Show the generated summary, flashcards, MCQs, dashboard history, progress page, and search.
 7. Search for `deadlock` in **Search Notes**.
 8. Re-upload the same file to show cached results.
 
@@ -157,6 +158,19 @@ Uploads are stored in `uploads/`. Generated content is cached by SHA-256 hash of
 - [JSON Contract](specs/001-offline-smart-study-assistant/contracts/study_content.schema.json)
 - [Issue Plan](docs/issues.md)
 - [Work Division](docs/work-division.md)
+
+## Repo Audit
+
+Phase 3 audit artifacts:
+
+- `CONTRIBUTING.md`
+- `CHANGELOG.md`
+- `.pre-commit-config.yaml`
+- `.gitlab-ci.yml`
+- `pyproject.toml`
+- `tests/`
+
+The audit pipeline contains real checks for formatting, linting, type checking, unit tests, dependency audit, security scan, secret scan, YAML validation, license metadata, no-cloud API usage, and Streamlit import smoke testing.
 
 ## License
 

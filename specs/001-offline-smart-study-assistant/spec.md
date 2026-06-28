@@ -33,7 +33,7 @@ As a student with lecture notes, exam material, and screenshots, I want an offli
 7. The system shall detect duplicate uploads using a content hash.
 8. The system shall show previous sessions in a dashboard.
 9. The system shall search prior uploads offline.
-10. The system shall expose settings for model path, thread count, context window, and OCR path.
+10. The system shall provide a progress view for quiz attempts, scores, and per-document completion.
 
 ## Non-Functional Requirements
 

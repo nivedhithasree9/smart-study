@@ -11,7 +11,7 @@ Streamlit pages
   MCQ Generator
   Study History
   Search Notes
-  Settings
+  Progress
 
 Services
   pdf_reader.py
@@ -59,7 +59,7 @@ Persistence
 3. Implement text cleaning and hashing.
 4. Implement local LLM service and JSON fallback.
 5. Build Streamlit navigation and upload flow.
-6. Render dashboard, summaries, flashcards, MCQs, search, and settings.
+6. Render dashboard, summaries, flashcards, MCQs, progress, and search.
 7. Add exports and quiz mode.
 8. Test offline demo with sample data.
 
