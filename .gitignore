@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+.venv/
+.streamlit/secrets.toml
+database/*.sqlite3
+database/*.sqlite3-*
+uploads/*
+!uploads/.gitkeep
+models/*
+!models/.gitkeep
+data/*
+!data/.gitkeep
