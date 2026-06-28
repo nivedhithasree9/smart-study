@@ -11,6 +11,8 @@ CPU-first, offline-first study material structuring for students who need useful
 - Runtime declaration: Python 3.11+, SQLite, Tesseract OCR, PyMuPDF, optional llama.cpp CPU inference with a local GGUF model
 - Offline guarantee: no cloud APIs, no internet-dependent AI services, no GPU/CUDA requirement
 
+> Important: the hosted Streamlit link is only a convenience preview. The hackathon demo path is the local web app at `http://localhost:8501`, started with `streamlit run app.py`, after dependencies and optional models are already installed. Core processing continues to work with Wi-Fi turned off.
+
 ## What It Does
 
 Offline Smart Study Assistant accepts PDF, TXT, PNG, and JPG study material, extracts text locally, cleans it, turns it into structured study resources, saves everything in SQLite, and lets students search older uploads offline.
@@ -19,8 +21,8 @@ Generated study resources include:
 
 - short, medium, and detailed summaries
 - key points and keywords
-- question-answer flashcards
-- at least 10 MCQs with four options and one correct answer
+- at least 20 question-answer flashcards
+- at least 20 MCQs with four options and one correct answer
 - short-answer exam questions
 - difficulty level and estimated study time
 - quiz score tracking and bookmarks
@@ -79,6 +81,18 @@ streamlit run app.py
 ```
 
 Open the local Streamlit URL, usually `http://localhost:8501`.
+
+## Offline-First Operation
+
+This is a local web app, not a cloud AI website. To run it offline:
+
+1. Install Python dependencies once while internet is available.
+2. Optional: place a local GGUF model at `models/tinyllama.gguf`.
+3. Disconnect Wi-Fi or mobile hotspot.
+4. Start the app with `streamlit run app.py`.
+5. Open `http://localhost:8501` in the browser.
+
+All extraction, OCR, summaries, flashcards, MCQs, search, progress tracking, and SQLite storage run on the same device. The app does not call OpenAI, Gemini, Claude, Anthropic, or any external AI API.
 
 ## Optional Local LLM Setup
 
