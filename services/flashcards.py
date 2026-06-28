@@ -42,6 +42,86 @@ JAVASCRIPT_CARDS = [
         "Events",
         "Events are user or browser actions, such as clicks, key presses, form changes, loading, and submitting.",
     ),
+    (
+        "for loop",
+        "A for loop repeats a block of code a known number of times, usually with initialization, condition, and update parts.",
+    ),
+    (
+        "while loop",
+        "A while loop repeats code while a condition is true. If the condition is false at the start, the block may not run.",
+    ),
+    (
+        "do-while loop",
+        "A do-while loop runs its block at least once, then checks the condition before repeating.",
+    ),
+    (
+        "for-in loop",
+        "A for-in loop is commonly used to loop through the properties of an object.",
+    ),
+    (
+        "Variables",
+        "Variables store values that a program can use and change. Older JavaScript examples often use the var keyword.",
+    ),
+    (
+        "document.write",
+        "document.write() writes content directly into the HTML document in simple JavaScript examples.",
+    ),
+    (
+        "alert",
+        "alert() displays a message box to the user, usually for quick feedback or warnings.",
+    ),
+    (
+        "prompt",
+        "prompt() asks the user for input and returns the entered value as text.",
+    ),
+    (
+        "Math object",
+        "The Math object provides mathematical properties and methods such as ceil(), floor(), round(), and random().",
+    ),
+    (
+        "Math.ceil",
+        "Math.ceil() returns the smallest integer greater than or equal to a given number.",
+    ),
+    (
+        "Date object",
+        "The Date object is used to work with dates and times, including year, month, day, hour, minute, and second values.",
+    ),
+    (
+        "getFullYear",
+        "getFullYear() returns the year from a Date object as a four-digit number.",
+    ),
+    (
+        "getMonth",
+        "getMonth() returns the month number from 0 to 11, so January is 0 and December is 11.",
+    ),
+    (
+        "Array length",
+        "The length property returns the number of elements stored in an array.",
+    ),
+    (
+        "innerHTML",
+        "innerHTML lets JavaScript get or set the HTML content inside an element.",
+    ),
+    (
+        "keydown event",
+        "The keydown event runs when the user presses a keyboard key.",
+    ),
+    (
+        "Boolean",
+        "A Boolean represents a true or false value and is commonly used in conditions.",
+    ),
+    (
+        "Object methods",
+        "Object methods are functions stored inside objects and used to describe object behavior.",
+    ),
+    (
+        "Object properties",
+        "Object properties are named values that describe an object's data or characteristics.",
+    ),
+    (
+        "HTML and JavaScript",
+        "HTML defines page content and structure, while JavaScript adds behavior and interaction.",
+    ),
 ]
 
 

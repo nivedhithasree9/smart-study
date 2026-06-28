@@ -169,6 +169,20 @@ def update_mcqs(document_id: int, mcqs: list[dict[str, object]], owner_id: str) 
         )
 
 
+def update_flashcards(document_id: int, flashcards: list[dict[str, str]], owner_id: str) -> None:
+    with connect() as conn:
+        conn.execute(
+            """
+            UPDATE StudyContent
+            SET flashcards = ?, created_at = ?
+            WHERE document_id = ? AND EXISTS (
+                SELECT 1 FROM Documents d WHERE d.id = StudyContent.document_id AND d.owner_id = ?
+            )
+            """,
+            (json.dumps(flashcards), utc_now(), document_id, owner_id),
+        )
+
+
 def list_documents(owner_id: str) -> list[sqlite3.Row]:
     with connect() as conn:
         return conn.execute(

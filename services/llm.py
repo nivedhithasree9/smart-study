@@ -53,7 +53,7 @@ def _generate_with_llama(
     prompt = f"""
 Return only valid JSON with keys: {sorted(REQUIRED_KEYS)}.
 Create study resources from this offline note named {filename}.
-Need at least 20 MCQs with 4 options and one correct_answer.
+Need at least 20 flashcards and at least 20 MCQs with 4 options and one correct_answer.
 TEXT:
 {text[:7000]}
 """
@@ -70,7 +70,7 @@ TEXT:
 def _fallback_content(text: str, filename: str) -> dict[str, Any]:
     short, medium, detailed, key_points = summarize(text)
     extracted_keywords = extract_keywords(text, 12)
-    flashcards = generate_flashcards(text, 8)
+    flashcards = generate_flashcards(text, 20)
     mcqs = generate_mcqs(text, 20)
     short_questions = [f"Explain the role of {kw} in this chapter." for kw in extracted_keywords[:6]]
     word_count = len(words(text))
@@ -98,6 +98,8 @@ def _normalize_content(content: dict[str, Any], text: str, filename: str) -> dic
     normalized = {key: content.get(key, fallback[key]) for key in REQUIRED_KEYS}
     if len(normalized.get("mcqs", [])) < 20:
         normalized["mcqs"] = fallback["mcqs"]
+    if len(normalized.get("flashcards", [])) < 20:
+        normalized["flashcards"] = fallback["flashcards"]
     if normalized.get("difficulty") not in {"Easy", "Medium", "Hard"}:
         normalized["difficulty"] = fallback["difficulty"]
     return normalized

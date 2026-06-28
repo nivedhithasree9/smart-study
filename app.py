@@ -11,6 +11,7 @@ import database as db
 from services.cache import get_cache_key
 from services.export import flashcards_to_csv, summary_to_text
 from services.extractor import SUPPORTED_EXTENSIONS, extract_text
+from services.flashcards import generate_flashcards
 from services.llm import generate_study_content
 from services.mcq_generator import generate_mcqs
 from services.text_processing import clean_text
@@ -18,7 +19,7 @@ from services.text_processing import clean_text
 UPLOAD_DIR = Path("uploads")
 DEFAULT_MODEL_PATH = "models/tinyllama.gguf"
 CONTEXT_WINDOWS = [1024, 2048, 4096]
-APP_DEPLOY_VERSION = "2026.06.28-mcq-more-questions"
+APP_DEPLOY_VERSION = "2026.06.28-more-flashcards"
 
 
 st.set_page_config(page_title="Offline Smart Study Assistant", page_icon="OSSA", layout="wide")
@@ -196,13 +197,21 @@ def page_summary() -> None:
 
 def page_flashcards() -> None:
     st.title("Flashcards")
-    content = load_content(st.session_state.selected_document_id or document_picker())
+    document_id = st.session_state.selected_document_id or document_picker()
+    content = load_content(document_id)
     if not content:
         return
-    for index, card in enumerate(content["flashcards"], start=1):
+    document = db.get_document(document_id, owner_id())
+    flashcards = content.get("flashcards", [])
+    if document and len(flashcards) < 20:
+        flashcards = generate_flashcards(document["extracted_text"], 20)
+        db.update_flashcards(document_id, flashcards, owner_id())
+        st.info("Flashcards were refreshed from the document text.")
+    st.caption(f"{len(flashcards)} flashcards available for this document.")
+    for index, card in enumerate(flashcards, start=1):
         with st.expander(f"Card {index}: {card['question']}"):
             st.write(card["answer"])
-    st.download_button("Export flashcards CSV", flashcards_to_csv(content["flashcards"]), "flashcards.csv", "text/csv")
+    st.download_button("Export flashcards CSV", flashcards_to_csv(flashcards), "flashcards.csv", "text/csv")
 
 
 def page_mcq() -> None:
