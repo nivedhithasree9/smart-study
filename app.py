@@ -212,31 +212,34 @@ def page_mcq() -> None:
     content = load_content(document_id)
     if not content:
         return
-    if len(content["mcqs"]) < 20:
-        document = db.get_document(document_id, owner_id())
-        if document:
-            db.update_mcqs(
-                document_id,
-                generate_mcqs(document["extracted_text"], count=20, variant_seed="upgrade"),
-                owner_id(),
-            )
-            st.rerun()
+    document = db.get_document(document_id, owner_id())
+    mcqs = content.get("mcqs", [])
+    has_real_mcqs = all(
+        isinstance(mcq, dict)
+        and isinstance(mcq.get("question"), str)
+        and isinstance(mcq.get("options"), list)
+        and len(mcq["options"]) == 4
+        and mcq.get("correct_answer") in mcq["options"]
+        for mcq in mcqs
+    )
+    if document and (len(mcqs) < 20 or not has_real_mcqs):
+        mcqs = generate_mcqs(document["extracted_text"], count=20, variant_seed="mcq-page-repair")
+        db.update_mcqs(document_id, mcqs, owner_id())
+        st.info("MCQs were refreshed from the document text.")
     left, right = st.columns([3, 1])
-    left.caption(f"{len(content['mcqs'])} multiple-choice questions available for this document.")
+    left.caption(f"{len(mcqs)} multiple-choice questions available for this document.")
     if right.button("Regenerate quiz questions", use_container_width=True):
-        document = db.get_document(document_id, owner_id())
         if not document:
             st.error("Could not find the selected document text.")
             return
-        fresh_mcqs = generate_mcqs(document["extracted_text"], count=20, variant_seed=time.time_ns())
-        db.update_mcqs(document_id, fresh_mcqs, owner_id())
+        mcqs = generate_mcqs(document["extracted_text"], count=20, variant_seed=time.time_ns())
+        db.update_mcqs(document_id, mcqs, owner_id())
         st.success("New quiz questions generated for the same document.")
-        st.rerun()
     score = 0
     attempted = 0
     with st.form("quiz_form"):
         answers = []
-        for index, mcq in enumerate(content["mcqs"], start=1):
+        for index, mcq in enumerate(mcqs, start=1):
             options = [str(option) for option in mcq["options"]]
             answers.append(
                 st.radio(
@@ -248,19 +251,19 @@ def page_mcq() -> None:
             )
         submitted = st.form_submit_button("Check answers")
     if submitted:
-        for answer, mcq in zip(answers, content["mcqs"]):
+        for answer, mcq in zip(answers, mcqs):
             if answer is None:
                 continue
             attempted += 1
             score += int(answer == mcq["correct_answer"])
-        total = len(content["mcqs"])
+        total = len(mcqs)
         percent = round((score / max(1, total)) * 100)
         db.save_progress(document_id, attempted, percent, owner_id())
         if attempted < total:
             st.warning(f"Answered {attempted}/{total}. Unanswered questions count as wrong.")
         st.success(f"Score: {score}/{total} ({percent}%)")
         with st.expander("Answer key", expanded=True):
-            for index, (answer, mcq) in enumerate(zip(answers, content["mcqs"]), start=1):
+            for index, (answer, mcq) in enumerate(zip(answers, mcqs), start=1):
                 if answer == mcq["correct_answer"]:
                     st.success(f"{index}. Correct: {mcq['correct_answer']}")
                 else:
