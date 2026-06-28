@@ -19,7 +19,7 @@ from services.text_processing import clean_text
 UPLOAD_DIR = Path("uploads")
 DEFAULT_MODEL_PATH = "models/tinyllama.gguf"
 CONTEXT_WINDOWS = [1024, 2048, 4096]
-APP_DEPLOY_VERSION = "2026.06.28-more-flashcards"
+APP_DEPLOY_VERSION = "2026.06.28-flashcards-hotfix"
 
 
 st.set_page_config(page_title="Offline Smart Study Assistant", page_icon="OSSA", layout="wide")
@@ -205,8 +205,11 @@ def page_flashcards() -> None:
     flashcards = content.get("flashcards", [])
     if document and len(flashcards) < 20:
         flashcards = generate_flashcards(document["extracted_text"], 20)
-        db.update_flashcards(document_id, flashcards, owner_id())
-        st.info("Flashcards were refreshed from the document text.")
+        try:
+            db.update_flashcards(document_id, flashcards, owner_id())
+            st.info("Flashcards were refreshed from the document text.")
+        except AttributeError:
+            st.info("Flashcards were refreshed for this page. Reboot the app once to save them permanently.")
     st.caption(f"{len(flashcards)} flashcards available for this document.")
     for index, card in enumerate(flashcards, start=1):
         with st.expander(f"Card {index}: {card['question']}"):
