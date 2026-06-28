@@ -1,0 +1,11 @@
+Operating System Notes: Deadlock
+
+A deadlock is a state in which a set of processes are blocked because each process is holding a resource and waiting for another resource held by another process. Deadlock commonly appears in operating systems when resource allocation is not controlled carefully.
+
+The four necessary conditions for deadlock are mutual exclusion, hold and wait, no preemption, and circular wait. Mutual exclusion means at least one resource cannot be shared. Hold and wait means a process already holding resources can request more. No preemption means resources cannot be forcibly taken away. Circular wait means each process waits for a resource held by the next process in a cycle.
+
+Deadlock prevention removes at least one necessary condition. Deadlock avoidance uses information about future requests and allocates resources only when the system remains in a safe state. The Banker's algorithm is a classic deadlock avoidance technique.
+
+Deadlock detection allows deadlocks to occur, detects them using a wait-for graph or resource allocation graph, and then recovers by terminating processes or preempting resources. Starvation is different from deadlock because a starving process waits indefinitely due to unfair scheduling, while deadlocked processes are trapped in a circular dependency.
+
+Important exam points include safe state, unsafe state, resource allocation graph, wait-for graph, recovery, prevention, avoidance, and detection.
