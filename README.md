@@ -183,9 +183,7 @@ Phase 3 audit artifacts:
 - `.gitlab-ci.yml`
 - `pyproject.toml`
 - `tests/`
-
 The audit pipeline contains real checks for formatting, linting, type checking, unit tests, dependency audit, security scan, secret scan, YAML validation, license metadata, no-cloud API usage, and Streamlit import smoke testing.
 
 ## License
-
-AGPL-3.0-or-later. See [LICENSE](LICENSE).
+AGPL-3.0-or-later. See [LICENSE](LICENSE)..
