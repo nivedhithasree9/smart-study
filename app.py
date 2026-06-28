@@ -18,6 +18,7 @@ from services.text_processing import clean_text
 UPLOAD_DIR = Path("uploads")
 DEFAULT_MODEL_PATH = "models/tinyllama.gguf"
 CONTEXT_WINDOWS = [1024, 2048, 4096]
+APP_DEPLOY_VERSION = "2026.06.28-mcq-page-fix"
 
 
 st.set_page_config(page_title="Offline Smart Study Assistant", page_icon="OSSA", layout="wide")
@@ -220,7 +221,7 @@ def page_mcq() -> None:
             )
             st.rerun()
     left, right = st.columns([3, 1])
-    left.caption(f"{len(content['mcqs'])} quiz questions available for this document.")
+    left.caption(f"{len(content['mcqs'])} multiple-choice questions available for this document.")
     if right.button("Regenerate quiz questions", use_container_width=True):
         document = db.get_document(document_id, owner_id())
         if not document:
@@ -235,10 +236,11 @@ def page_mcq() -> None:
     with st.form("quiz_form"):
         answers = []
         for index, mcq in enumerate(content["mcqs"], start=1):
+            options = [str(option) for option in mcq["options"]]
             answers.append(
                 st.radio(
-                    f"{index}. {mcq['question']}",
-                    mcq["options"],
+                    f"Question {index}: {mcq['question']}",
+                    options,
                     index=None,
                     key=f"mcq_{document_id}_{index}",
                 )
@@ -363,7 +365,7 @@ def main() -> None:
         "Search Notes": page_search,
     }
     choice = st.sidebar.radio("Pages", list(pages))
-    st.sidebar.caption(f"Private device: {owner_id()[:8]} | CPU-first | Offline-first")
+    st.sidebar.caption(f"Private device: {owner_id()[:8]} | CPU-first | Offline-first | {APP_DEPLOY_VERSION}")
     pages[choice]()
 
 
