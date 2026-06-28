@@ -18,7 +18,7 @@ from services.text_processing import clean_text
 UPLOAD_DIR = Path("uploads")
 DEFAULT_MODEL_PATH = "models/tinyllama.gguf"
 CONTEXT_WINDOWS = [1024, 2048, 4096]
-APP_DEPLOY_VERSION = "2026.06.28-mcq-page-fix"
+APP_DEPLOY_VERSION = "2026.06.28-mcq-more-questions"
 
 
 st.set_page_config(page_title="Offline Smart Study Assistant", page_icon="OSSA", layout="wide")

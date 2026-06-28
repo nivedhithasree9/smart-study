@@ -103,12 +103,196 @@ JAVASCRIPT_MCQS = [
         ],
         "correct_answer": "A user clicking a button",
     },
+    {
+        "question": "Which statement correctly describes the for loop?",
+        "options": [
+            "It repeats a block of code a known number of times",
+            "It stores many values in one variable",
+            "It creates a new HTML document",
+            "It converts text into an image",
+        ],
+        "correct_answer": "It repeats a block of code a known number of times",
+    },
+    {
+        "question": "What is the purpose of a while loop?",
+        "options": [
+            "To repeat code while a condition remains true",
+            "To define only object properties",
+            "To load a CSS stylesheet",
+            "To permanently close the browser",
+        ],
+        "correct_answer": "To repeat code while a condition remains true",
+    },
+    {
+        "question": "What does a for-in loop commonly iterate over?",
+        "options": [
+            "The properties of an object",
+            "Only image pixels",
+            "Only database rows",
+            "The operating system files",
+        ],
+        "correct_answer": "The properties of an object",
+    },
+    {
+        "question": "Which keyword is used to declare a variable in older JavaScript examples?",
+        "options": ["var", "echo", "select", "table"],
+        "correct_answer": "var",
+    },
+    {
+        "question": "What does document.write() do in basic JavaScript examples?",
+        "options": [
+            "Writes content into the web page document",
+            "Creates a database backup",
+            "Checks internet speed",
+            "Encrypts all JavaScript files",
+        ],
+        "correct_answer": "Writes content into the web page document",
+    },
+    {
+        "question": "What is the role of alert() in JavaScript?",
+        "options": [
+            "To display a message box to the user",
+            "To sort an array permanently",
+            "To style an element with CSS",
+            "To create a server route",
+        ],
+        "correct_answer": "To display a message box to the user",
+    },
+    {
+        "question": "What does prompt() usually collect?",
+        "options": [
+            "Input typed by the user",
+            "The browser's installed fonts",
+            "Only the current date",
+            "A hidden database password",
+        ],
+        "correct_answer": "Input typed by the user",
+    },
+    {
+        "question": "Which object provides mathematical methods such as ceil()?",
+        "options": ["Math", "Document", "Array", "WindowHistory"],
+        "correct_answer": "Math",
+    },
+    {
+        "question": "What does Math.ceil() return?",
+        "options": [
+            "The smallest integer greater than or equal to a number",
+            "The largest negative number in a script",
+            "The current month name",
+            "The length of a string",
+        ],
+        "correct_answer": "The smallest integer greater than or equal to a number",
+    },
+    {
+        "question": "Which object is used in JavaScript to work with dates and times?",
+        "options": ["Date", "Table", "Style", "Audio"],
+        "correct_answer": "Date",
+    },
+    {
+        "question": "What does getFullYear() return?",
+        "options": [
+            "The year as four digits",
+            "The number of array elements",
+            "The selected HTML tag name",
+            "The user's keyboard layout",
+        ],
+        "correct_answer": "The year as four digits",
+    },
+    {
+        "question": "What does getMonth() return in JavaScript Date objects?",
+        "options": [
+            "The month number from 0 to 11",
+            "The day name as a string",
+            "The total number of functions",
+            "The browser zoom level",
+        ],
+        "correct_answer": "The month number from 0 to 11",
+    },
+    {
+        "question": "What does the length property of an array return?",
+        "options": [
+            "The number of elements in the array",
+            "The current screen width",
+            "The file size of the script",
+            "The number of web pages open",
+        ],
+        "correct_answer": "The number of elements in the array",
+    },
+    {
+        "question": "Why are JavaScript events useful?",
+        "options": [
+            "They allow code to respond to user actions",
+            "They remove the need for programming logic",
+            "They convert JavaScript into HTML",
+            "They make every condition true",
+        ],
+        "correct_answer": "They allow code to respond to user actions",
+    },
+    {
+        "question": "What does innerHTML allow JavaScript to do?",
+        "options": [
+            "Get or set the HTML content inside an element",
+            "Install a browser extension",
+            "Compress a PDF file",
+            "Change the computer's operating system",
+        ],
+        "correct_answer": "Get or set the HTML content inside an element",
+    },
+    {
+        "question": "Which event can be used to react when a keyboard key is pressed?",
+        "options": ["keydown", "ceil", "setMonth", "Boolean"],
+        "correct_answer": "keydown",
+    },
+    {
+        "question": "What is a Boolean value normally used to represent?",
+        "options": [
+            "A true or false condition",
+            "Only a list of images",
+            "A full HTML table",
+            "The number of browser windows",
+        ],
+        "correct_answer": "A true or false condition",
+    },
+    {
+        "question": "Why can JavaScript make web pages more interactive?",
+        "options": [
+            "It can react to user actions and update page content",
+            "It disables all browser events",
+            "It prevents pages from using HTML",
+            "It works only after the server is restarted",
+        ],
+        "correct_answer": "It can react to user actions and update page content",
+    },
+    {
+        "question": "Which pair is part of common web page structure and behavior?",
+        "options": [
+            "HTML defines content and JavaScript adds behavior",
+            "JavaScript replaces all browsers and HTML stores databases",
+            "CSS runs loops and JavaScript stores only colors",
+            "Date objects define page headings and arrays open files",
+        ],
+        "correct_answer": "HTML defines content and JavaScript adds behavior",
+    },
+    {
+        "question": "What is the best description of an object in JavaScript?",
+        "options": [
+            "A collection of related properties and methods",
+            "Only a single plain number",
+            "A type of internet cable",
+            "A replacement for every loop",
+        ],
+        "correct_answer": "A collection of related properties and methods",
+    },
 ]
 
 
 def generate_mcqs(text: str, count: int = 20, variant_seed: str | int | None = None) -> list[dict[str, object]]:
     if _is_javascript_note(text):
-        return JAVASCRIPT_MCQS[: min(count, len(JAVASCRIPT_MCQS))]
+        mcqs = [dict(item) for item in JAVASCRIPT_MCQS]
+        if variant_seed is not None:
+            rng = random.Random(_seed_from_text(text, variant_seed))
+            rng.shuffle(mcqs)
+        return mcqs[: min(count, len(mcqs))]
 
     rng = random.Random(_seed_from_text(text, variant_seed))
     terms = keywords(text, max(28, count + 10)) or ["Concept", "Definition", "Example", "Process"]
