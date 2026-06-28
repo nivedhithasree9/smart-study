@@ -13,7 +13,6 @@ from services.llm import generate_study_content
 from services.text_processing import clean_text
 
 UPLOAD_DIR = Path("uploads")
-MODEL_DIR = Path("models")
 DEFAULT_MODEL_PATH = "models/tinyllama.gguf"
 CONTEXT_WINDOWS = [1024, 2048, 4096]
 
@@ -48,18 +47,6 @@ def normalize_settings() -> None:
     st.session_state.threads = min(max(1, st.session_state.threads), cpu_count)
     if st.session_state.get("context_window") not in CONTEXT_WINDOWS:
         st.session_state.context_window = 2048
-
-
-def discover_models() -> list[str]:
-    MODEL_DIR.mkdir(exist_ok=True)
-    return [str(path) for path in sorted(MODEL_DIR.glob("*.gguf"))]
-
-
-def reset_runtime_defaults() -> None:
-    st.session_state.model_path = discover_models()[0] if discover_models() else DEFAULT_MODEL_PATH
-    st.session_state.threads = default_threads()
-    st.session_state.context_window = 2048
-    st.session_state.tesseract_cmd = ""
 
 
 def save_upload(uploaded_file) -> Path:
@@ -260,6 +247,55 @@ def page_history() -> None:
         st.dataframe([dict(row) for row in progress], use_container_width=True, hide_index=True)
 
 
+def page_progress() -> None:
+    st.title("Progress")
+    documents = db.list_documents()
+    progress = db.list_progress()
+
+    total_attempts = len(progress)
+    total_mcqs = sum(row["completed_mcqs"] for row in progress)
+    scores = [row["last_score"] for row in progress]
+    average_score = round(sum(scores) / len(scores)) if scores else 0
+    best_score = max(scores) if scores else 0
+
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Study Sessions", len(documents))
+    c2.metric("Quiz Attempts", total_attempts)
+    c3.metric("MCQs Attempted", total_mcqs)
+    c4.metric("Best Score", f"{best_score}%")
+
+    st.progress(average_score / 100 if scores else 0, text=f"Average quiz score: {average_score}%")
+
+    if not progress:
+        st.info("Complete an MCQ quiz to start tracking progress.")
+        return
+
+    st.subheader("Recent Quiz Activity")
+    st.dataframe(
+        [
+            {
+                "Document": row["filename"],
+                "Attempted MCQs": row["completed_mcqs"],
+                "Score": f"{row['last_score']}%",
+                "Updated": row["updated_at"],
+            }
+            for row in progress
+        ],
+        use_container_width=True,
+        hide_index=True,
+    )
+
+    st.subheader("Document Completion")
+    for row in documents:
+        document_attempts = [item for item in progress if item["filename"] == row["filename"]]
+        best_document_score = max((item["last_score"] for item in document_attempts), default=0)
+        with st.container(border=True):
+            left, right = st.columns([3, 1])
+            left.write(row["filename"])
+            left.progress(best_document_score / 100, text=f"Best quiz score: {best_document_score}%")
+            right.metric("Attempts", len(document_attempts))
+
+
 def page_search() -> None:
     st.title("Search Notes")
     query = st.text_input("Search previous uploads")
@@ -276,67 +312,6 @@ def page_search() -> None:
                 st.session_state.selected_document_id = row["id"]
 
 
-def page_settings() -> None:
-    st.title("Settings")
-    normalize_settings()
-
-    st.subheader("Offline AI Runtime")
-    available_models = discover_models()
-    if available_models:
-        model_options = available_models + ["Custom path"]
-        current_model = st.session_state.model_path
-        selected_model = current_model if current_model in available_models else "Custom path"
-        selected_model = st.selectbox("Detected GGUF models", model_options, index=model_options.index(selected_model))
-        if selected_model != "Custom path":
-            st.session_state.model_path = selected_model
-    else:
-        st.caption("No `.gguf` model found in `models/`. The app will still work offline using deterministic study generation.")
-
-    st.text_input(
-        "GGUF model path",
-        key="model_path",
-        placeholder=DEFAULT_MODEL_PATH,
-        help="Place TinyLlama or Phi-3 Mini GGUF inside the models folder, then set the path here.",
-    )
-
-    cpu_count = max(1, os.cpu_count() or 4)
-    st.slider(
-        "CPU threads",
-        min_value=1,
-        max_value=cpu_count,
-        key="threads",
-        help="Use fewer threads if your laptop becomes slow during inference.",
-    )
-    st.select_slider(
-        "Context window",
-        options=CONTEXT_WINDOWS,
-        key="context_window",
-        help="Higher values read more text at once but use more memory.",
-    )
-    st.text_input(
-        "Tesseract executable path (optional)",
-        key="tesseract_cmd",
-        placeholder=r"C:\Program Files\Tesseract-OCR\tesseract.exe",
-    )
-
-    left, right = st.columns([1, 3])
-    if left.button("Reset defaults", use_container_width=True):
-        reset_runtime_defaults()
-        st.rerun()
-    right.caption("Defaults are safe for CPU-only demo. A model is optional for fallback mode.")
-
-    model_path = Path(st.session_state.model_path)
-    if model_path.exists():
-        st.success(f"Model found: `{model_path}`. llama.cpp CPU inference will be used.")
-    else:
-        st.info(
-            "Model not found. Running in offline deterministic fallback mode, so upload, summary, flashcards, MCQs, "
-            "search, and SQLite storage still work without internet."
-        )
-
-    st.warning("No cloud APIs are used. Keep Wi-Fi off during the demo to prove offline operation.")
-
-
 def main() -> None:
     init_state()
     st.sidebar.title("Offline Smart Study")
@@ -347,8 +322,8 @@ def main() -> None:
         "Flashcards": page_flashcards,
         "MCQ Generator": page_mcq,
         "Study History": page_history,
+        "Progress": page_progress,
         "Search Notes": page_search,
-        "Settings": page_settings,
     }
     choice = st.sidebar.radio("Pages", list(pages))
     st.sidebar.caption("CPU-first | Offline-first | SQLite")
