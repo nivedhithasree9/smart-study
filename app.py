@@ -13,6 +13,9 @@ from services.llm import generate_study_content
 from services.text_processing import clean_text
 
 UPLOAD_DIR = Path("uploads")
+MODEL_DIR = Path("models")
+DEFAULT_MODEL_PATH = "models/tinyllama.gguf"
+CONTEXT_WINDOWS = [1024, 2048, 4096]
 
 
 st.set_page_config(page_title="Offline Smart Study Assistant", page_icon="OSSA", layout="wide")
@@ -21,11 +24,42 @@ UPLOAD_DIR.mkdir(exist_ok=True)
 
 
 def init_state() -> None:
-    st.session_state.setdefault("model_path", "models/tinyllama.gguf")
-    st.session_state.setdefault("threads", max(1, (os.cpu_count() or 4) - 1))
+    st.session_state.setdefault("model_path", DEFAULT_MODEL_PATH)
+    st.session_state.setdefault("threads", default_threads())
     st.session_state.setdefault("context_window", 2048)
     st.session_state.setdefault("tesseract_cmd", "")
     st.session_state.setdefault("selected_document_id", None)
+    normalize_settings()
+
+
+def default_threads() -> int:
+    cpu_count = os.cpu_count() or 4
+    return min(max(1, cpu_count - 1), cpu_count)
+
+
+def normalize_settings() -> None:
+    if not str(st.session_state.get("model_path", "")).strip():
+        st.session_state.model_path = DEFAULT_MODEL_PATH
+    cpu_count = max(1, os.cpu_count() or 4)
+    try:
+        st.session_state.threads = int(st.session_state.get("threads", default_threads()))
+    except (TypeError, ValueError):
+        st.session_state.threads = default_threads()
+    st.session_state.threads = min(max(1, st.session_state.threads), cpu_count)
+    if st.session_state.get("context_window") not in CONTEXT_WINDOWS:
+        st.session_state.context_window = 2048
+
+
+def discover_models() -> list[str]:
+    MODEL_DIR.mkdir(exist_ok=True)
+    return [str(path) for path in sorted(MODEL_DIR.glob("*.gguf"))]
+
+
+def reset_runtime_defaults() -> None:
+    st.session_state.model_path = discover_models()[0] if discover_models() else DEFAULT_MODEL_PATH
+    st.session_state.threads = default_threads()
+    st.session_state.context_window = 2048
+    st.session_state.tesseract_cmd = ""
 
 
 def save_upload(uploaded_file) -> Path:
@@ -177,18 +211,34 @@ def page_mcq() -> None:
     with st.form("quiz_form"):
         answers = []
         for index, mcq in enumerate(content["mcqs"], start=1):
-            answers.append(st.radio(f"{index}. {mcq['question']}", mcq["options"], key=f"mcq_{document_id}_{index}"))
-        submitted = st.form_submit_button("Submit quiz")
+            answers.append(
+                st.radio(
+                    f"{index}. {mcq['question']}",
+                    mcq["options"],
+                    index=None,
+                    key=f"mcq_{document_id}_{index}",
+                )
+            )
+        submitted = st.form_submit_button("Check answers")
     if submitted:
         for answer, mcq in zip(answers, content["mcqs"]):
+            if answer is None:
+                continue
             attempted += 1
             score += int(answer == mcq["correct_answer"])
-        percent = round((score / max(1, attempted)) * 100)
+        total = len(content["mcqs"])
+        percent = round((score / max(1, total)) * 100)
         db.save_progress(document_id, attempted, percent)
-        st.success(f"Score: {score}/{attempted} ({percent}%)")
-    with st.expander("Answer key"):
-        for index, mcq in enumerate(content["mcqs"], start=1):
-            st.write(f"{index}. {mcq['correct_answer']}")
+        if attempted < total:
+            st.warning(f"Answered {attempted}/{total}. Unanswered questions count as wrong.")
+        st.success(f"Score: {score}/{total} ({percent}%)")
+        with st.expander("Answer key", expanded=True):
+            for index, (answer, mcq) in enumerate(zip(answers, content["mcqs"]), start=1):
+                if answer == mcq["correct_answer"]:
+                    st.success(f"{index}. Correct: {mcq['correct_answer']}")
+                else:
+                    chosen = answer or "Not answered"
+                    st.error(f"{index}. Your answer: {chosen} | Correct: {mcq['correct_answer']}")
 
 
 def page_history() -> None:
@@ -228,13 +278,63 @@ def page_search() -> None:
 
 def page_settings() -> None:
     st.title("Settings")
-    st.text_input("GGUF model path", key="model_path")
-    st.slider("CPU threads", min_value=1, max_value=max(1, os.cpu_count() or 8), key="threads")
-    st.select_slider("Context window", options=[1024, 2048, 4096], key="context_window")
-    st.text_input("Tesseract executable path (optional)", key="tesseract_cmd")
-    model_exists = Path(st.session_state.model_path).exists()
-    st.info(f"Model status: {'found, llama.cpp will be used' if model_exists else 'not found, local deterministic fallback active'}")
-    st.warning("Core app makes no cloud calls. Keep Wi-Fi off during demo to prove offline operation.")
+    normalize_settings()
+
+    st.subheader("Offline AI Runtime")
+    available_models = discover_models()
+    if available_models:
+        model_options = available_models + ["Custom path"]
+        current_model = st.session_state.model_path
+        selected_model = current_model if current_model in available_models else "Custom path"
+        selected_model = st.selectbox("Detected GGUF models", model_options, index=model_options.index(selected_model))
+        if selected_model != "Custom path":
+            st.session_state.model_path = selected_model
+    else:
+        st.caption("No `.gguf` model found in `models/`. The app will still work offline using deterministic study generation.")
+
+    st.text_input(
+        "GGUF model path",
+        key="model_path",
+        placeholder=DEFAULT_MODEL_PATH,
+        help="Place TinyLlama or Phi-3 Mini GGUF inside the models folder, then set the path here.",
+    )
+
+    cpu_count = max(1, os.cpu_count() or 4)
+    st.slider(
+        "CPU threads",
+        min_value=1,
+        max_value=cpu_count,
+        key="threads",
+        help="Use fewer threads if your laptop becomes slow during inference.",
+    )
+    st.select_slider(
+        "Context window",
+        options=CONTEXT_WINDOWS,
+        key="context_window",
+        help="Higher values read more text at once but use more memory.",
+    )
+    st.text_input(
+        "Tesseract executable path (optional)",
+        key="tesseract_cmd",
+        placeholder=r"C:\Program Files\Tesseract-OCR\tesseract.exe",
+    )
+
+    left, right = st.columns([1, 3])
+    if left.button("Reset defaults", use_container_width=True):
+        reset_runtime_defaults()
+        st.rerun()
+    right.caption("Defaults are safe for CPU-only demo. A model is optional for fallback mode.")
+
+    model_path = Path(st.session_state.model_path)
+    if model_path.exists():
+        st.success(f"Model found: `{model_path}`. llama.cpp CPU inference will be used.")
+    else:
+        st.info(
+            "Model not found. Running in offline deterministic fallback mode, so upload, summary, flashcards, MCQs, "
+            "search, and SQLite storage still work without internet."
+        )
+
+    st.warning("No cloud APIs are used. Keep Wi-Fi off during the demo to prove offline operation.")
 
 
 def main() -> None:
