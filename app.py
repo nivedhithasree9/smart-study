@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import time
+import uuid
 from pathlib import Path
 
 import streamlit as st
@@ -25,12 +26,26 @@ UPLOAD_DIR.mkdir(exist_ok=True)
 
 
 def init_state() -> None:
+    st.session_state.setdefault("device_id", current_device_id())
     st.session_state.setdefault("model_path", DEFAULT_MODEL_PATH)
     st.session_state.setdefault("threads", default_threads())
     st.session_state.setdefault("context_window", 2048)
     st.session_state.setdefault("tesseract_cmd", "")
     st.session_state.setdefault("selected_document_id", None)
     normalize_settings()
+
+
+def current_device_id() -> str:
+    query_device = str(st.query_params.get("device", "")).strip()
+    if query_device:
+        return query_device
+    device_id = uuid.uuid4().hex
+    st.query_params["device"] = device_id
+    return device_id
+
+
+def owner_id() -> str:
+    return st.session_state["device_id"]
 
 
 def default_threads() -> int:
@@ -64,11 +79,11 @@ def save_upload(uploaded_file) -> Path:
 
 
 def load_content(document_id: int | None) -> dict | None:
-    return db.get_content_for_document(document_id) if document_id else None
+    return db.get_content_for_document(document_id, owner_id()) if document_id else None
 
 
 def document_picker(label: str = "Choose document") -> int | None:
-    documents = db.list_documents()
+    documents = db.list_documents(owner_id())
     if not documents:
         st.info("Upload notes first to unlock this page.")
         return None
@@ -89,7 +104,7 @@ def render_content_overview(content: dict) -> None:
 
 def page_dashboard() -> None:
     st.title("Dashboard")
-    documents = db.list_documents()
+    documents = db.list_documents(owner_id())
     c1, c2, c3 = st.columns(3)
     c1.metric("Documents", len(documents))
     c2.metric("Bookmarked", sum(row["bookmarked"] for row in documents))
@@ -134,15 +149,15 @@ def page_upload() -> None:
                 raise ValueError("Not enough readable text was extracted.")
 
             progress.progress(40, text="Checking SQLite cache")
-            hash_value = get_cache_key(extracted)
-            existing = db.get_document_by_hash(hash_value)
+            hash_value = f"{owner_id()}:{get_cache_key(extracted)}"
+            existing = db.get_document_by_hash(hash_value, owner_id())
             if existing:
                 st.session_state.selected_document_id = existing["id"]
                 progress.progress(100, text="Loaded cached study content")
                 st.success("This document was already processed. Cached results loaded.")
                 return
 
-            document_id = db.insert_document(uploaded_file.name, extracted, hash_value)
+            document_id = db.insert_document(uploaded_file.name, extracted, hash_value, owner_id())
             progress.progress(65, text="Generating structured study JSON on CPU")
             content = generate_study_content(
                 extracted,
@@ -196,19 +211,23 @@ def page_mcq() -> None:
     if not content:
         return
     if len(content["mcqs"]) < 20:
-        document = db.get_document(document_id)
+        document = db.get_document(document_id, owner_id())
         if document:
-            db.update_mcqs(document_id, generate_mcqs(document["extracted_text"], count=20, variant_seed="upgrade"))
+            db.update_mcqs(
+                document_id,
+                generate_mcqs(document["extracted_text"], count=20, variant_seed="upgrade"),
+                owner_id(),
+            )
             st.rerun()
     left, right = st.columns([3, 1])
     left.caption(f"{len(content['mcqs'])} quiz questions available for this document.")
     if right.button("Regenerate quiz questions", use_container_width=True):
-        document = db.get_document(document_id)
+        document = db.get_document(document_id, owner_id())
         if not document:
             st.error("Could not find the selected document text.")
             return
         fresh_mcqs = generate_mcqs(document["extracted_text"], count=20, variant_seed=time.time_ns())
-        db.update_mcqs(document_id, fresh_mcqs)
+        db.update_mcqs(document_id, fresh_mcqs, owner_id())
         st.success("New quiz questions generated for the same document.")
         st.rerun()
     score = 0
@@ -233,7 +252,7 @@ def page_mcq() -> None:
             score += int(answer == mcq["correct_answer"])
         total = len(content["mcqs"])
         percent = round((score / max(1, total)) * 100)
-        db.save_progress(document_id, attempted, percent)
+        db.save_progress(document_id, attempted, percent, owner_id())
         if attempted < total:
             st.warning(f"Answered {attempted}/{total}. Unanswered questions count as wrong.")
         st.success(f"Score: {score}/{total} ({percent}%)")
@@ -248,18 +267,18 @@ def page_mcq() -> None:
 
 def page_history() -> None:
     st.title("Study History")
-    documents = db.list_documents()
+    documents = db.list_documents(owner_id())
     for row in documents:
         with st.container(border=True):
             left, right = st.columns([4, 1])
             left.subheader(row["filename"])
             left.caption(f"{row['upload_date']} | {row['difficulty'] or 'Pending'}")
             bookmarked = right.checkbox("Bookmark", value=bool(row["bookmarked"]), key=f"bookmark_{row['id']}")
-            db.toggle_bookmark(row["id"], bookmarked)
+            db.toggle_bookmark(row["id"], bookmarked, owner_id())
             if left.button("Open", key=f"open_{row['id']}"):
                 st.session_state.selected_document_id = row["id"]
                 st.success("Document selected. Open AI Summary, Flashcards, or MCQ Generator.")
-    progress = db.list_progress()
+    progress = db.list_progress(owner_id())
     if progress:
         st.subheader("Quiz progress")
         st.dataframe([dict(row) for row in progress], use_container_width=True, hide_index=True)
@@ -267,8 +286,8 @@ def page_history() -> None:
 
 def page_progress() -> None:
     st.title("Progress")
-    documents = db.list_documents()
-    progress = db.list_progress()
+    documents = db.list_documents(owner_id())
+    progress = db.list_progress(owner_id())
 
     total_attempts = len(progress)
     total_mcqs = sum(row["completed_mcqs"] for row in progress)
@@ -319,7 +338,7 @@ def page_search() -> None:
     query = st.text_input("Search previous uploads")
     if not query:
         return
-    results = db.search_documents(query)
+    results = db.search_documents(query, owner_id())
     st.caption(f"{len(results)} result(s)")
     for row in results:
         with st.container(border=True):
@@ -344,7 +363,7 @@ def main() -> None:
         "Search Notes": page_search,
     }
     choice = st.sidebar.radio("Pages", list(pages))
-    st.sidebar.caption("CPU-first | Offline-first | SQLite")
+    st.sidebar.caption(f"Private device: {owner_id()[:8]} | CPU-first | Offline-first")
     pages[choice]()
 
 
