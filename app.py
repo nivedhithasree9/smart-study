@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import time
 from pathlib import Path
 
 import streamlit as st
@@ -10,6 +11,7 @@ from services.cache import get_cache_key
 from services.export import flashcards_to_csv, summary_to_text
 from services.extractor import SUPPORTED_EXTENSIONS, extract_text
 from services.llm import generate_study_content
+from services.mcq_generator import generate_mcqs
 from services.text_processing import clean_text
 
 UPLOAD_DIR = Path("uploads")
@@ -193,6 +195,22 @@ def page_mcq() -> None:
     content = load_content(document_id)
     if not content:
         return
+    if len(content["mcqs"]) < 20:
+        document = db.get_document(document_id)
+        if document:
+            db.update_mcqs(document_id, generate_mcqs(document["extracted_text"], count=20, variant_seed="upgrade"))
+            st.rerun()
+    left, right = st.columns([3, 1])
+    left.caption(f"{len(content['mcqs'])} quiz questions available for this document.")
+    if right.button("Regenerate quiz questions", use_container_width=True):
+        document = db.get_document(document_id)
+        if not document:
+            st.error("Could not find the selected document text.")
+            return
+        fresh_mcqs = generate_mcqs(document["extracted_text"], count=20, variant_seed=time.time_ns())
+        db.update_mcqs(document_id, fresh_mcqs)
+        st.success("New quiz questions generated for the same document.")
+        st.rerun()
     score = 0
     attempted = 0
     with st.form("quiz_form"):
