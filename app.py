@@ -147,10 +147,10 @@ def page_summary() -> None:
         return
     render_content_overview(content)
     tabs = st.tabs(["Short", "Medium", "Detailed", "Key Points", "Keywords"])
-    tabs[0].write(content["summary_short"])
-    tabs[1].write(content["summary_medium"])
-    tabs[2].write(content["summary_detailed"])
-    tabs[3].markdown("\n".join(f"- {point}" for point in content["key_points"]))
+    tabs[0].markdown(content["summary_short"])
+    tabs[1].markdown(content["summary_medium"])
+    tabs[2].markdown(content["summary_detailed"])
+    tabs[3].markdown("\n".join(f"- {clean_text(point)}" for point in content["key_points"]))
     tabs[4].write(", ".join(content["keywords"]))
     st.download_button("Export summary as text", summary_to_text(content), file_name="summary.txt")
 
