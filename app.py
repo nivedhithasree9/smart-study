@@ -207,6 +207,7 @@ def page_flashcards() -> None:
 
 def page_mcq() -> None:
     st.title("MCQ Generator")
+    st.caption(f"MCQ quiz mode active | deploy {APP_DEPLOY_VERSION}")
     document_id = st.session_state.selected_document_id or document_picker()
     content = load_content(document_id)
     if not content:
@@ -364,7 +365,7 @@ def main() -> None:
         "Progress": page_progress,
         "Search Notes": page_search,
     }
-    choice = st.sidebar.radio("Pages", list(pages))
+    choice = st.sidebar.radio("Pages", list(pages), key=f"active_page_{APP_DEPLOY_VERSION}")
     st.sidebar.caption(f"Private device: {owner_id()[:8]} | CPU-first | Offline-first | {APP_DEPLOY_VERSION}")
     pages[choice]()
 
