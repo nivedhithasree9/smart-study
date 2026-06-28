@@ -123,6 +123,19 @@ def get_content_for_document(document_id: int) -> dict[str, Any] | None:
     return row_to_content(row) if row else None
 
 
+def get_document(document_id: int) -> sqlite3.Row | None:
+    with connect() as conn:
+        return conn.execute("SELECT * FROM Documents WHERE id = ?", (document_id,)).fetchone()
+
+
+def update_mcqs(document_id: int, mcqs: list[dict[str, object]]) -> None:
+    with connect() as conn:
+        conn.execute(
+            "UPDATE StudyContent SET mcqs = ?, created_at = ? WHERE document_id = ?",
+            (json.dumps(mcqs), utc_now(), document_id),
+        )
+
+
 def list_documents() -> list[sqlite3.Row]:
     with connect() as conn:
         return conn.execute(
