@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "StudyContent",
+  "type": "object",
+  "required": [
+    "title",
+    "subject",
+    "chapter",
+    "summary_short",
+    "summary_medium",
+    "summary_detailed",
+    "keywords",
+    "key_points",
+    "flashcards",
+    "mcqs",
+    "short_questions",
+    "difficulty",
+    "estimated_study_time"
+  ],
+  "properties": {
+    "title": { "type": "string" },
+    "subject": { "type": "string" },
+    "chapter": { "type": "string" },
+    "summary_short": { "type": "string" },
+    "summary_medium": { "type": "string" },
+    "summary_detailed": { "type": "string" },
+    "keywords": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "key_points": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "flashcards": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["question", "answer"],
+        "properties": {
+          "question": { "type": "string" },
+          "answer": { "type": "string" }
+        }
+      }
+    },
+    "mcqs": {
+      "type": "array",
+      "minItems": 10,
+      "items": {
+        "type": "object",
+        "required": ["question", "options", "correct_answer"],
+        "properties": {
+          "question": { "type": "string" },
+          "options": {
+            "type": "array",
+            "minItems": 4,
+            "maxItems": 4,
+            "items": { "type": "string" }
+          },
+          "correct_answer": { "type": "string" }
+        }
+      }
+    },
+    "short_questions": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "difficulty": {
+      "type": "string",
+      "enum": ["Easy", "Medium", "Hard"]
+    },
+    "estimated_study_time": { "type": "string" }
+  }
+}
