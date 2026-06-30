@@ -9,6 +9,8 @@ stages:
 
 default:
   image: python:3.11-slim
+  tags:
+    - smart-study
   before_script:
     - python --version
     - pip install -r requirements.txt -r requirements-dev.txt
