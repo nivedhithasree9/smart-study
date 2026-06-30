@@ -7,7 +7,6 @@ from pathlib import Path
 from services.ocr import extract_image_text
 from services.pdf_reader import extract_pdf_text
 
-
 SUPPORTED_EXTENSIONS = {".pdf", ".txt", ".png", ".jpg", ".jpeg"}
 
 

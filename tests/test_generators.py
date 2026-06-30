@@ -2,7 +2,6 @@ from services.flashcards import generate_flashcards
 from services.mcq_generator import generate_mcqs
 from services.summarizer import summarize
 
-
 JAVASCRIPT_TEXT = """
 JavaScript is a client-side scripting language used to create dynamic web pages.
 The Document Object Model represents the HTML document as a tree of elements.
@@ -25,7 +24,7 @@ def test_javascript_mcqs_are_real_questions() -> None:
     assert len(mcqs) == 10
     assert all(len(mcq["options"]) == 4 for mcq in mcqs)
     assert mcqs[0]["correct_answer"] in mcqs[0]["options"]
-    assert "Which statement best describes JavaScript?" == mcqs[0]["question"]
+    assert mcqs[0]["question"] == "Which statement best describes JavaScript?"
 
 
 def test_summarizer_returns_study_notes() -> None:

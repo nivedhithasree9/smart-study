@@ -201,6 +201,8 @@ def page_upload() -> None:
 def page_summary() -> None:
     st.title("AI Summary")
     document_id = document_picker("summary_document_id")
+    if document_id is None:
+        return
     content = load_content(document_id)
     if not content:
         return
@@ -217,6 +219,8 @@ def page_summary() -> None:
 def page_flashcards() -> None:
     st.title("Flashcards")
     document_id = document_picker("flashcards_document_id")
+    if document_id is None:
+        return
     content = load_content(document_id)
     if not content:
         return
@@ -240,6 +244,8 @@ def page_mcq() -> None:
     st.title("MCQ Generator")
     st.caption(f"MCQ quiz mode active | deploy {APP_DEPLOY_VERSION}")
     document_id = document_picker("mcq_document_id")
+    if document_id is None:
+        return
     content = load_content(document_id)
     if not content:
         return
@@ -282,7 +288,7 @@ def page_mcq() -> None:
             )
         submitted = st.form_submit_button("Check answers")
     if submitted:
-        for answer, mcq in zip(answers, mcqs):
+        for answer, mcq in zip(answers, mcqs, strict=False):
             if answer is None:
                 continue
             attempted += 1
@@ -294,7 +300,7 @@ def page_mcq() -> None:
             st.warning(f"Answered {attempted}/{total}. Unanswered questions count as wrong.")
         st.success(f"Score: {score}/{total} ({percent}%)")
         with st.expander("Answer key", expanded=True):
-            for index, (answer, mcq) in enumerate(zip(answers, mcqs), start=1):
+            for index, (answer, mcq) in enumerate(zip(answers, mcqs, strict=False), start=1):
                 if answer == mcq["correct_answer"]:
                     st.success(f"{index}. Correct: {mcq['correct_answer']}")
                 else:

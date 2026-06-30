@@ -1,15 +1,10 @@
+---
 stages:
-  - format
-  - lint
-  - type
-  - test
-  - security-bandit
-  - security-pip-audit
-  - security-secrets
-  - syntax
-  - yaml
-  - metadata
-  - policy
+  - prepare
+  - quality
+  - verification
+  - security
+  - compliance
   - smoke
 
 default:
@@ -18,60 +13,70 @@ default:
     - python --version
     - pip install -r requirements.txt -r requirements-dev.txt
 
+variables:
+  AUDIT_SCAN_EXCLUDES: "database[\\/].*|uploads[\\/].*|models[\\/].*|.mypy_cache[\\/].*|.pytest_cache[\\/].*|.ruff_cache[\\/].*"  # yamllint disable-line rule:line-length
+
 format:black:
-  stage: format
+  stage: quality
   script:
     - black --check .
 
 lint:ruff:
-  stage: lint
+  stage: quality
   script:
     - ruff check .
 
 type:mypy:
-  stage: type
+  stage: verification
   script:
     - mypy app.py database.py services tests
 
 test:pytest:
-  stage: test
+  stage: verification
   script:
     - pytest -q
 
 security:bandit:
-  stage: security-bandit
+  stage: security
   script:
     - bandit -q -r app.py database.py services
 
 security:pip-audit:
-  stage: security-pip-audit
+  stage: security
   script:
     - pip-audit -r requirements.txt
 
 security:secrets:
-  stage: security-secrets
+  stage: security
   script:
-    - detect-secrets scan --all-files --exclude-files 'database/.*|uploads/.*|models/.*'
+    - >
+      detect-secrets scan --all-files
+      --exclude-files "$AUDIT_SCAN_EXCLUDES"
 
 syntax:compile:
-  stage: syntax
+  stage: prepare
   script:
     - python -m py_compile app.py database.py services/*.py tests/*.py
 
 yaml:lint:
-  stage: yaml
+  stage: prepare
   script:
     - yamllint .gitlab-ci.yml .pre-commit-config.yaml
 
 metadata:license:
-  stage: metadata
+  stage: compliance
   script:
     - python scripts/check_metadata.py
 
 policy:no-cloud:
-  stage: policy
+  stage: compliance
   script:
     - python scripts/check_no_cloud.py
+
+commits:semantic:
+  stage: compliance
+  script:
+    - python scripts/check_semantic_commit.py
 
 smoke:streamlit-import:
   stage: smoke

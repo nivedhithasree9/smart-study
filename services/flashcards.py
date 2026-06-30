@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from services.text_processing import keywords, note_sentences
 
-
 JAVASCRIPT_CARDS = [
     (
         "JavaScript",
@@ -136,7 +135,9 @@ def generate_flashcards(text: str, limit: int = 8) -> list[dict[str, str]]:
 
     for concept, markers in _concepts_for_text(text, limit):
         match = _best_match(source_sentences, markers)
-        cards.append({"question": f"What should you remember about {concept}?", "answer": _study_answer(concept, match)})
+        cards.append(
+            {"question": f"What should you remember about {concept}?", "answer": _study_answer(concept, match)}
+        )
     return cards[:limit]
 
 

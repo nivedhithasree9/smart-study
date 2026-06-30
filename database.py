@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import json
 import sqlite3
-from datetime import datetime, timezone
+from collections.abc import Mapping, Sequence
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -21,8 +22,7 @@ def connect() -> sqlite3.Connection:
 
 def init_db() -> None:
     with connect() as conn:
-        conn.executescript(
-            """
+        conn.executescript("""
             CREATE TABLE IF NOT EXISTS Documents (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 filename TEXT NOT NULL,
@@ -59,8 +59,7 @@ def init_db() -> None:
                 updated_at TEXT NOT NULL,
                 FOREIGN KEY(document_id) REFERENCES Documents(id)
             );
-            """
-        )
+            """)
         _ensure_owner_columns(conn)
 
 
@@ -74,7 +73,7 @@ def _ensure_owner_columns(conn: sqlite3.Connection) -> None:
 
 
 def utc_now() -> str:
-    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+    return datetime.now(UTC).isoformat(timespec="seconds")
 
 
 def get_document_by_hash(hash_value: str, owner_id: str) -> sqlite3.Row | None:
@@ -94,6 +93,8 @@ def insert_document(filename: str, extracted_text: str, hash_value: str, owner_i
             """,
             (filename, utc_now(), extracted_text, hash_value, owner_id),
         )
+        if cursor.lastrowid is None:
+            raise RuntimeError("Document insert did not return an id.")
         return int(cursor.lastrowid)
 
 
@@ -155,7 +156,7 @@ def get_document(document_id: int, owner_id: str) -> sqlite3.Row | None:
         ).fetchone()
 
 
-def update_mcqs(document_id: int, mcqs: list[dict[str, object]], owner_id: str) -> None:
+def update_mcqs(document_id: int, mcqs: Sequence[Mapping[str, object]], owner_id: str) -> None:
     with connect() as conn:
         conn.execute(
             """

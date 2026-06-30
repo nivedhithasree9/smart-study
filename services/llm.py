@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from services.flashcards import generate_flashcards
 from services.keyword_extractor import extract_keywords
@@ -17,11 +17,20 @@ from services.mcq_generator import generate_mcqs
 from services.summarizer import summarize
 from services.text_processing import estimate_reading_time, words
 
-
 REQUIRED_KEYS = {
-    "title", "subject", "chapter", "summary_short", "summary_medium",
-    "summary_detailed", "keywords", "key_points", "flashcards", "mcqs",
-    "short_questions", "difficulty", "estimated_study_time",
+    "title",
+    "subject",
+    "chapter",
+    "summary_short",
+    "summary_medium",
+    "summary_detailed",
+    "keywords",
+    "key_points",
+    "flashcards",
+    "mcqs",
+    "short_questions",
+    "difficulty",
+    "estimated_study_time",
 }
 
 
@@ -58,7 +67,7 @@ TEXT:
 {text[:7000]}
 """
     llm = Llama(model_path=model_path, n_ctx=context_window, n_threads=threads, n_gpu_layers=0, verbose=False)
-    result = llm(prompt, max_tokens=1800, temperature=0.2, stop=["```"])
+    result = cast(Any, llm(prompt, max_tokens=1800, temperature=0.2, stop=["```"]))
     raw = result["choices"][0]["text"]
     start = raw.find("{")
     end = raw.rfind("}")

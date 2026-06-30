@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-
 REQUIRED_FILES = [
     "README.md",
     "LICENSE",

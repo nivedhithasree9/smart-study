@@ -28,22 +28,13 @@ def summarize(text: str) -> tuple[str, str, str, list[str]]:
 def _short_notes(source: list[str], topics: dict[str, list[str]]) -> str:
     covered = ", ".join(label for label, items in topics.items() if items)
     overview = " ".join(_coverage_summary(source, " ".join(source), 3))
-    return (
-        "### Quick Summary\n"
-        f"{overview}\n\n"
-        f"**Main areas covered:** {covered or 'core concepts and examples'}."
-    )
+    return "### Quick Summary\n" f"{overview}\n\n" f"**Main areas covered:** {covered or 'core concepts and examples'}."
 
 
 def _medium_notes(source: list[str], topics: dict[str, list[str]], concept_bullets: list[str]) -> str:
     overview = " ".join(_coverage_summary(source, " ".join(source), 5))
     bullets = "\n".join(f"- {item}" for item in concept_bullets[:10])
-    return (
-        "### Study Summary\n"
-        f"{overview}\n\n"
-        "### Important Concepts\n"
-        f"{bullets}"
-    )
+    return "### Study Summary\n" f"{overview}\n\n" "### Important Concepts\n" f"{bullets}"
 
 
 def _detailed_notes(
@@ -91,7 +82,7 @@ def _topic_notes(source: list[str]) -> dict[str, list[str]]:
         "DOM": ["document object model", "dom", "node", "element", "innerhtml", "getelementbyid"],
         "Events": ["event", "click", "mouse", "keyboard", "form", "submit", "change"],
     }
-    topics = {label: [] for label in topic_rules}
+    topics: dict[str, list[str]] = {label: [] for label in topic_rules}
     for sentence in source:
         lowered = sentence.lower()
         for label, markers in topic_rules.items():

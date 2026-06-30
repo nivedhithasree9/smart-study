@@ -4,8 +4,15 @@ from __future__ import annotations
 
 import hashlib
 import random
+from typing import TypedDict
 
 from services.text_processing import keywords, note_sentences
+
+
+class MCQ(TypedDict):
+    question: str
+    options: list[str]
+    correct_answer: str
 
 
 QUESTION_TEMPLATES = [
@@ -17,7 +24,7 @@ QUESTION_TEMPLATES = [
     "Which concept should a student revise after reading: {clue}?",
 ]
 
-JAVASCRIPT_MCQS = [
+JAVASCRIPT_MCQS: list[MCQ] = [
     {
         "question": "Which statement best describes JavaScript?",
         "options": [
@@ -286,15 +293,15 @@ JAVASCRIPT_MCQS = [
 ]
 
 
-def generate_mcqs(text: str, count: int = 20, variant_seed: str | int | None = None) -> list[dict[str, object]]:
+def generate_mcqs(text: str, count: int = 20, variant_seed: str | int | None = None) -> list[MCQ]:
     if _is_javascript_note(text):
-        mcqs = [dict(item) for item in JAVASCRIPT_MCQS]
+        js_mcqs = [item.copy() for item in JAVASCRIPT_MCQS]
         if variant_seed is not None:
-            rng = random.Random(_seed_from_text(text, variant_seed))
-            rng.shuffle(mcqs)
-        return mcqs[: min(count, len(mcqs))]
+            rng = random.Random(_seed_from_text(text, variant_seed))  # nosec B311
+            rng.shuffle(js_mcqs)
+        return js_mcqs[: min(count, len(js_mcqs))]
 
-    rng = random.Random(_seed_from_text(text, variant_seed))
+    rng = random.Random(_seed_from_text(text, variant_seed))  # nosec B311
     terms = keywords(text, max(28, count + 10)) or ["Concept", "Definition", "Example", "Process"]
     source_sentences = note_sentences(text)
     rng.shuffle(terms)
@@ -303,7 +310,7 @@ def generate_mcqs(text: str, count: int = 20, variant_seed: str | int | None = N
     if not source_sentences:
         source_sentences = ["an important concept from the uploaded notes"]
 
-    mcqs: list[dict[str, object]] = []
+    mcqs: list[MCQ] = []
     used_questions: set[str] = set()
 
     for index in range(count):

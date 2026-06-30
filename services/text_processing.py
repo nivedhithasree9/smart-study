@@ -7,10 +7,45 @@ import re
 from collections import Counter
 
 STOPWORDS = {
-    "a", "an", "and", "are", "as", "at", "be", "by", "for", "from", "has",
-    "have", "in", "is", "it", "its", "of", "on", "or", "that", "the", "this",
-    "to", "was", "were", "with", "can", "will", "which", "into", "their",
-    "there", "these", "those", "when", "where", "while", "also", "than",
+    "a",
+    "an",
+    "and",
+    "are",
+    "as",
+    "at",
+    "be",
+    "by",
+    "for",
+    "from",
+    "has",
+    "have",
+    "in",
+    "is",
+    "it",
+    "its",
+    "of",
+    "on",
+    "or",
+    "that",
+    "the",
+    "this",
+    "to",
+    "was",
+    "were",
+    "with",
+    "can",
+    "will",
+    "which",
+    "into",
+    "their",
+    "there",
+    "these",
+    "those",
+    "when",
+    "where",
+    "while",
+    "also",
+    "than",
 }
 
 
@@ -24,8 +59,7 @@ PDF_NOISE_PATTERNS = [
 
 INLINE_PDF_NOISE = [
     re.compile(
-        r"\b\d{1,4}\s*/\s*\d{1,4}\s+DSAI\s+WEB\s+ENABLED\s+TECHNOLOGY\s+"
-        r"March\s+\d{1,2},\s+\d{4}\s+JAVA\s+SCRIPT\b",
+        r"\b\d{1,4}\s*/\s*\d{1,4}\s+DSAI\s+WEB\s+ENABLED\s+TECHNOLOGY\s+" r"March\s+\d{1,2},\s+\d{4}\s+JAVA\s+SCRIPT\b",
         re.IGNORECASE,
     ),
     re.compile(
