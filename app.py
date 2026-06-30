@@ -20,6 +20,11 @@ UPLOAD_DIR = Path("uploads")
 DEFAULT_MODEL_PATH = "models/tinyllama.gguf"
 CONTEXT_WINDOWS = [1024, 2048, 4096]
 APP_DEPLOY_VERSION = "2026.06.28-flashcards-hotfix"
+DOCUMENT_STATE_KEYS = (
+    "summary_document_id",
+    "flashcards_document_id",
+    "mcq_document_id",
+)
 
 
 st.set_page_config(page_title="Offline Smart Study Assistant", page_icon="OSSA", layout="wide")
@@ -33,7 +38,8 @@ def init_state() -> None:
     st.session_state.setdefault("threads", default_threads())
     st.session_state.setdefault("context_window", 2048)
     st.session_state.setdefault("tesseract_cmd", "")
-    st.session_state.setdefault("selected_document_id", None)
+    for state_key in DOCUMENT_STATE_KEYS:
+        st.session_state.setdefault(state_key, None)
     normalize_settings()
 
 
@@ -84,14 +90,27 @@ def load_content(document_id: int | None) -> dict | None:
     return db.get_content_for_document(document_id, owner_id()) if document_id else None
 
 
-def document_picker(label: str = "Choose document") -> int | None:
+def select_document_everywhere(document_id: int) -> None:
+    for state_key in DOCUMENT_STATE_KEYS:
+        st.session_state[state_key] = document_id
+
+
+def document_picker(state_key: str, label: str = "Choose document") -> int | None:
     documents = db.list_documents(owner_id())
     if not documents:
         st.info("Upload notes first to unlock this page.")
         return None
     options = {f"#{row['id']} - {row['filename']}": row["id"] for row in documents}
-    selected = st.selectbox(label, list(options.keys()))
-    return options[selected]
+    labels = list(options.keys())
+    document_ids = list(options.values())
+    selected_document_id = st.session_state.get(state_key)
+    try:
+        selected_index = document_ids.index(selected_document_id)
+    except ValueError:
+        selected_index = 0
+    selected = st.selectbox(label, labels, index=selected_index, key=f"{state_key}_picker")
+    st.session_state[state_key] = options[selected]
+    return st.session_state[state_key]
 
 
 def render_content_overview(content: dict) -> None:
@@ -154,7 +173,7 @@ def page_upload() -> None:
             hash_value = f"{owner_id()}:{get_cache_key(extracted)}"
             existing = db.get_document_by_hash(hash_value, owner_id())
             if existing:
-                st.session_state.selected_document_id = existing["id"]
+                select_document_everywhere(existing["id"])
                 progress.progress(100, text="Loaded cached study content")
                 st.success("This document was already processed. Cached results loaded.")
                 return
@@ -170,7 +189,7 @@ def page_upload() -> None:
             )
             progress.progress(85, text="Saving summaries, flashcards, and MCQs")
             db.insert_study_content(document_id, content)
-            st.session_state.selected_document_id = document_id
+            select_document_everywhere(document_id)
             progress.progress(100, text="Done")
             st.success("Study resources generated and saved offline.")
             render_content_overview(content)
@@ -181,7 +200,7 @@ def page_upload() -> None:
 
 def page_summary() -> None:
     st.title("AI Summary")
-    document_id = st.session_state.selected_document_id or document_picker()
+    document_id = document_picker("summary_document_id")
     content = load_content(document_id)
     if not content:
         return
@@ -197,7 +216,7 @@ def page_summary() -> None:
 
 def page_flashcards() -> None:
     st.title("Flashcards")
-    document_id = st.session_state.selected_document_id or document_picker()
+    document_id = document_picker("flashcards_document_id")
     content = load_content(document_id)
     if not content:
         return
@@ -220,7 +239,7 @@ def page_flashcards() -> None:
 def page_mcq() -> None:
     st.title("MCQ Generator")
     st.caption(f"MCQ quiz mode active | deploy {APP_DEPLOY_VERSION}")
-    document_id = st.session_state.selected_document_id or document_picker()
+    document_id = document_picker("mcq_document_id")
     content = load_content(document_id)
     if not content:
         return
@@ -294,7 +313,7 @@ def page_history() -> None:
             bookmarked = right.checkbox("Bookmark", value=bool(row["bookmarked"]), key=f"bookmark_{row['id']}")
             db.toggle_bookmark(row["id"], bookmarked, owner_id())
             if left.button("Open", key=f"open_{row['id']}"):
-                st.session_state.selected_document_id = row["id"]
+                select_document_everywhere(row["id"])
                 st.success("Document selected. Open AI Summary, Flashcards, or MCQ Generator.")
     progress = db.list_progress(owner_id())
     if progress:
@@ -364,7 +383,7 @@ def page_search() -> None:
             st.caption(row["filename"])
             st.write(row["summary_short"] or row["extracted_text"][:300])
             if st.button("Select", key=f"select_{row['id']}"):
-                st.session_state.selected_document_id = row["id"]
+                select_document_everywhere(row["id"])
 
 
 def main() -> None:

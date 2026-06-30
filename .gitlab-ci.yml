@@ -1,5 +1,16 @@
 stages:
-  - audit
+  - format
+  - lint
+  - type
+  - test
+  - security-bandit
+  - security-pip-audit
+  - security-secrets
+  - syntax
+  - yaml
+  - metadata
+  - policy
+  - smoke
 
 default:
   image: python:3.11-slim
@@ -8,61 +19,61 @@ default:
     - pip install -r requirements.txt -r requirements-dev.txt
 
 format:black:
-  stage: audit
+  stage: format
   script:
     - black --check .
 
 lint:ruff:
-  stage: audit
+  stage: lint
   script:
     - ruff check .
 
 type:mypy:
-  stage: audit
+  stage: type
   script:
     - mypy app.py database.py services tests
 
 test:pytest:
-  stage: audit
+  stage: test
   script:
     - pytest -q
 
 security:bandit:
-  stage: audit
+  stage: security-bandit
   script:
     - bandit -q -r app.py database.py services
 
 security:pip-audit:
-  stage: audit
+  stage: security-pip-audit
   script:
     - pip-audit -r requirements.txt
 
 security:secrets:
-  stage: audit
+  stage: security-secrets
   script:
     - detect-secrets scan --all-files --exclude-files 'database/.*|uploads/.*|models/.*'
 
 syntax:compile:
-  stage: audit
+  stage: syntax
   script:
     - python -m py_compile app.py database.py services/*.py tests/*.py
 
 yaml:lint:
-  stage: audit
+  stage: yaml
   script:
     - yamllint .gitlab-ci.yml .pre-commit-config.yaml
 
 metadata:license:
-  stage: audit
+  stage: metadata
   script:
     - python scripts/check_metadata.py
 
 policy:no-cloud:
-  stage: audit
+  stage: policy
   script:
     - python scripts/check_no_cloud.py
 
 smoke:streamlit-import:
-  stage: audit
+  stage: smoke
   script:
     - python -c "import app; print('streamlit app import ok')"
