@@ -13,9 +13,6 @@ default:
     - python --version
     - pip install -r requirements.txt -r requirements-dev.txt
 
-variables:
-  AUDIT_SCAN_EXCLUDES: "database[\\/].*|uploads[\\/].*|models[\\/].*|.mypy_cache[\\/].*|.pytest_cache[\\/].*|.ruff_cache[\\/].*"  # yamllint disable-line rule:line-length
-
 format:black:
   stage: quality
   script:
@@ -51,12 +48,13 @@ security:secrets:
   script:
     - >
       detect-secrets scan --all-files
-      --exclude-files "$AUDIT_SCAN_EXCLUDES"
+      --exclude-files
+      ".+_cache[\\/].*|database[\\/].*|uploads[\\/].*|models[\\/].*"
 
 syntax:compile:
   stage: prepare
   script:
-    - python -m py_compile app.py database.py services/*.py tests/*.py
+    - python -m compileall -q app.py database.py services tests scripts
 
 yaml:lint:
   stage: prepare
