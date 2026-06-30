@@ -8,77 +8,79 @@ stages:
   - smoke
 
 default:
-  image: python:3.11-slim
   tags:
     - smart-study
   before_script:
-    - python --version
-    - pip install -r requirements.txt -r requirements-dev.txt
+    - '& $env:PYTHON --version'
+    - '& $env:PYTHON -m pip install -r requirements.txt -r requirements-dev.txt'
+
+variables:
+  PYTHON: 'C:\Users\HP\AppData\Local\Programs\Python\Python313\python.exe'
 
 format:black:
   stage: quality
   script:
-    - black --check .
+    - '& $env:PYTHON -m black --check .'
 
 lint:ruff:
   stage: quality
   script:
-    - ruff check .
+    - '& $env:PYTHON -m ruff check .'
 
 type:mypy:
   stage: verification
   script:
-    - mypy app.py database.py services tests
+    - '& $env:PYTHON -m mypy app.py database.py services tests'
 
 test:pytest:
   stage: verification
   script:
-    - pytest -q
+    - '& $env:PYTHON -m pytest -q'
 
 security:bandit:
   stage: security
   script:
-    - bandit -q -r app.py database.py services
+    - '& $env:PYTHON -m bandit -q -r app.py database.py services'
 
 security:pip-audit:
   stage: security
   script:
-    - pip-audit -r requirements.txt
+    - '& $env:PYTHON -m pip_audit -r requirements.txt'
 
 security:secrets:
   stage: security
   script:
     - >
-      detect-secrets scan --all-files
+      & $env:PYTHON -m detect_secrets scan --all-files
       --exclude-files
       ".+_cache[\\/].*|database[\\/].*|uploads[\\/].*|models[\\/].*"
 
 syntax:compile:
   stage: prepare
   script:
-    - python -m compileall -q app.py database.py services tests scripts
+    - '& $env:PYTHON -m compileall -q app.py database.py services tests scripts'
 
 yaml:lint:
   stage: prepare
   script:
-    - yamllint .gitlab-ci.yml .pre-commit-config.yaml
+    - '& $env:PYTHON -m yamllint .gitlab-ci.yml .pre-commit-config.yaml'
 
 metadata:license:
   stage: compliance
   script:
-    - python scripts/check_metadata.py
+    - '& $env:PYTHON scripts/check_metadata.py'
 
 policy:no-cloud:
   stage: compliance
   script:
-    - python scripts/check_no_cloud.py
+    - '& $env:PYTHON scripts/check_no_cloud.py'
 
 commits:semantic:
   stage: compliance
   script:
-    - python scripts/check_semantic_commit.py
+    - '& $env:PYTHON scripts/check_semantic_commit.py'
 
 smoke:streamlit-import:
   stage: smoke
   script:
-    - python -c "import app; print('streamlit app import ok')"
+    - '& $env:PYTHON -c "import app; print(''streamlit app import ok'')"'
